@@ -47,7 +47,7 @@ export function Session({ settings, health, onExit }: Props) {
   live.current = { paused, timeScale, selected, micLang };
   const claudeDown = useRef(false);
   const atcId = useRef(-1);
-  const logEnd = useRef<HTMLDivElement>(null);
+  const logBox = useRef<HTMLDivElement>(null);
 
   // simulation loop
   useEffect(() => {
@@ -75,7 +75,12 @@ export function Session({ settings, health, onExit }: Props) {
     };
   }, [sim, radio, settings]);
 
-  useEffect(() => logEnd.current?.scrollIntoView({ block: 'end' }), [log]);
+  // Scroll the log itself: scrollIntoView returns a promise in current
+  // Chromium, which React would mistake for a cleanup function.
+  useEffect(() => {
+    const el = logBox.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [log]);
 
   const submit = useCallback(
     async (text: string, viaVoice: boolean) => {
@@ -206,7 +211,7 @@ export function Session({ settings, health, onExit }: Props) {
       </aside>
 
       <section className="comms">
-        <div className="log">
+        <div className="log" ref={logBox}>
           {log.map((t) => (
             <div key={t.id} className={`line ${t.from}`}>
               <span className="mono time">{clock(t.time).slice(3)}</span>
@@ -214,7 +219,6 @@ export function Session({ settings, health, onExit }: Props) {
               <span>{t.text}</span>
             </div>
           ))}
-          <div ref={logEnd} />
         </div>
         <form
           className="input"
